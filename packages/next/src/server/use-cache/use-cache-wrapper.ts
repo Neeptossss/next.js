@@ -1393,11 +1393,17 @@ async function generateCacheEntryImpl(
       const dynamicAccessAbortSignal =
         dynamicAccessAsyncStorage.getStore()?.abortController.signal
 
-      const cachePrerenderAbortController = new CachePrerenderAbortController(
-        dynamicAccessAbortSignal,
-        timeoutAbortController.signal
-      )
-      const abortSignal = cachePrerenderAbortController.signal
+      let cachePrerenderAbortController:
+        | CachePrerenderAbortController
+        | undefined
+      let abortSignal = timeoutAbortController.signal
+      if (dynamicAccessAbortSignal) {
+        cachePrerenderAbortController = new CachePrerenderAbortController(
+          dynamicAccessAbortSignal,
+          timeoutAbortController.signal
+        )
+        abortSignal = cachePrerenderAbortController.signal
+      }
 
       let prelude: ReadableStream<Uint8Array>
       try {
@@ -1421,7 +1427,7 @@ async function generateCacheEntryImpl(
         prelude = prerenderResult.prelude
       } finally {
         clearTimeout(timer)
-        cachePrerenderAbortController.dispose()
+        cachePrerenderAbortController?.dispose()
       }
 
       if (timeoutAbortController.signal.aborted) {
